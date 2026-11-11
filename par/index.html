@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Par • Chat direto</title>
+  <link rel="stylesheet" href="style.css?v=files1">
+  <script src="app.js?v=files1" defer></script>
+  <script src="files.js?v=1" defer></script>
+</head>
+<body>
+  <div class="app">
+    <main>
+      <header>
+        <div class="brand">
+          <span class="logo" aria-hidden="true">P</span>
+          <div>
+            <p class="eyebrow">Sala privada</p>
+            <h1>Par <span aria-hidden="true">/</span> conversa</h1>
+            <div class="presence"><span id="dot" aria-hidden="true"></span><span id="status" role="status">Desconectado</span></div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <details id="participants" hidden>
+            <summary aria-label="Participantes"><span class="wide-label">Participantes</span><span class="compact-label" aria-hidden="true">Pessoas</span></summary>
+            <div class="participants-panel">
+              <ul id="people"></ul>
+              <p id="turn-status" hidden></p>
+            </div>
+          </details>
+          <button id="share" class="secondary" aria-label="Compartilhar" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7"/></svg>
+            <span class="wide-label">Compartilhar</span><span class="compact-label" aria-hidden="true">Convidar</span>
+          </button>
+          <button id="reset" class="secondary" aria-label="Sair da sala" hidden><span class="wide-label">Sair da sala</span><span class="compact-label" aria-hidden="true">Sair</span></button>
+        </div>
+      </header>
+      <section id="setup" aria-labelledby="setup-title">
+        <p class="eyebrow">WEBRTC · PONTO A PONTO</p>
+        <h2 id="setup-title">Abra sua própria sala</h2>
+        <p id="instructions">Crie uma sala e convide pessoas para conversar e compartilhar a tela.</p>
+        <form id="entry">
+          <label for="name">Como quer aparecer na sala?</label>
+          <input id="name" name="name" placeholder="Seu nome" maxlength="40" autocomplete="nickname" required>
+          <div class="profile-avatar">
+            <span id="profile-preview" class="participant-avatar" aria-hidden="true">
+              <span id="profile-initials"></span><img alt="" hidden>
+            </span>
+            <div class="profile-fields">
+              <label for="avatar-file">Foto de perfil (opcional)</label>
+              <input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif">
+              <button id="remove-avatar" class="secondary" type="button" hidden>Remover foto</button>
+              <p id="avatar-status" role="status" hidden></p>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="start">Criar sala</button>
+          </div>
+        </form>
+      </section>
+      <p id="notice" role="status" hidden></p>
+      <div class="call" data-view="stage" hidden>
+        <section id="call-stage" class="media" aria-label="Câmeras e telas">
+          <div class="media-stage">
+            <div id="videos"></div>
+            <div id="tiles" aria-label="Pessoas na chamada"></div>
+          </div>
+          <div class="voice" role="group" aria-label="Controles da chamada">
+            <div class="capture-control">
+              <button id="mic" class="call-control" aria-label="Ativar microfone" aria-pressed="false" disabled>
+                <span class="control-icon"><svg aria-hidden="true" viewBox="0 0 24 24">
+                  <rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1m-7 8v3m-3 0h6"/>
+                  <path class="control-slash" d="m3 3 18 18"/>
+                </svg></span>
+                <span>Microfone</span>
+              </button>
+              <button id="mic-source" class="secondary source-button" type="button" aria-label="Selecionar microfone" aria-haspopup="dialog">⌄</button>
+            </div>
+            <div class="capture-control">
+              <button id="camera" class="call-control" aria-label="Ligar câmera" aria-pressed="false">
+                <span class="control-icon"><svg aria-hidden="true" viewBox="0 0 24 24">
+                  <rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>
+                  <path class="control-slash" d="m3 3 18 18"/>
+                </svg></span>
+                <span>Câmera</span>
+              </button>
+              <button id="camera-source" class="secondary source-button" type="button" aria-label="Selecionar câmera" aria-haspopup="dialog">⌄</button>
+            </div>
+            <button id="screen" class="call-control" aria-label="Compartilhar tela" aria-pressed="false">
+              <span class="control-icon"><svg aria-hidden="true" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 17v4m-4 0h8m-4-7V7m-3 3 3-3 3 3"/>
+              </svg></span>
+              <span id="screen-label">Tela</span>
+            </button>
+            <button id="listen" class="secondary" hidden>Ouvir áudio</button>
+          </div>
+        </section>
+        <section id="call-chat" class="chat" aria-labelledby="chat-title">
+          <h2 id="chat-title">Chat</h2>
+          <ol id="messages" role="log" aria-label="Mensagens" tabindex="0"></ol>
+          <form id="composer">
+            <button id="attach" class="secondary" type="button" aria-label="Anexar arquivo" title="Anexar arquivo" disabled>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 13 7-7a3 3 0 0 1 4 4l-9 9a5 5 0 0 1-7-7l9-9m-6 11 8-8a1 1 0 0 1 2 2l-8 8"/></svg>
+            </button>
+            <input id="file-input" type="file" hidden>
+            <input id="message" aria-label="Mensagem" placeholder="Escreva aqui" maxlength="2000" required disabled>
+            <button id="send" disabled>Enviar</button>
+          </form>
+        </section>
+        <nav class="mobile-views" aria-label="Área da chamada">
+          <button id="view-stage" class="secondary" type="button" aria-controls="call-stage" aria-pressed="true">Chamada</button>
+          <button id="view-chat" class="secondary" type="button" aria-controls="call-chat" aria-pressed="false">
+            Chat <span id="chat-unread" hidden></span>
+          </button>
+        </nav>
+      </div>
+      <dialog id="source-dialog" aria-labelledby="source-title">
+        <h2 id="source-title">Fonte de captura</h2>
+        <p id="source-current"></p>
+        <label for="source-device">Selecionar dispositivo</label>
+        <select id="source-device"></select>
+        <p id="source-status" role="status"></p>
+        <div class="actions">
+          <button id="source-apply" type="button">Aplicar</button>
+          <button id="source-refresh" class="secondary" type="button">Atualizar lista</button>
+          <form method="dialog"><button class="secondary">Fechar</button></form>
+        </div>
+      </dialog>
+    </main>
+  </div>
+</body>
+</html>
