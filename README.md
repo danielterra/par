@@ -25,3 +25,9 @@ O Par tenta uma conexão direta e pode usar Cloudflare Realtime TURN como reserv
 Em produção, configure o vínculo D1 `PAR_ROOMS` e os segredos `PAR_TURN_KEY_ID` e `PAR_TURN_KEY_TOKEN` no Pages. O banco de sinalização é inicializado ao criar a primeira sala. Para testar localmente, execute `wrangler pages dev . --d1 PAR_ROOMS=par-rooms-local` na raiz do site e abra `/par/`.
 
 Consulte [AGENTS.md](AGENTS.md) para o processo de release por tag.
+
+Em **Participantes → Uso de TURN**, consulte o percentual mensal do produto e o tempo de cada participante presente na sala. A métrica soma o tempo de cada conexão de cada participante, com meses em UTC. Uma pessoa conectada a três outras durante um minuto soma três minutos. Ambos os lados reportam seu próprio tempo.
+
+A coleta começa na versão v1.1.0. Os navegadores amostram as conexões aproximadamente a cada dois segundos e enviam totais cumulativos a cada 30 segundos, junto à sinalização. Reenvios usam o maior total recebido para evitar duplicação. Períodos sem rota identificada aparecem separadamente e são excluídos do percentual. Abas suspensas e encerramentos abruptos podem deixar lacunas. Os dados são informados pelo cliente e servem como estimativa de uso, não como medição de faturamento.
+
+O D1 mantém totais por mês, sala e identificador aleatório de participação, sem copiar o nome para a tabela de métricas. A interface mostra nomes apenas dos participantes ainda presentes. O total mensal agregado é visível para participantes autenticados em uma sala. O tempo acumulado de uma participação continua no total depois que ela sai.

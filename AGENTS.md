@@ -6,7 +6,7 @@ O aplicativo fica em `par/` e as funções do Cloudflare Pages em `functions/par
 
 - Para rodar localmente, use `wrangler pages dev . --d1 PAR_ROOMS=par-rooms-local` e abra `/par/`.
 - Valide os scripts com `node --input-type=module --check < caminho/do/arquivo.js`. Teste com duas abas quando mudar sala, sinalização, WebRTC ou chat.
-- Mantenha credenciais fora do Git. O D1 guarda apenas dados de presença e sinalização. Mensagens, mídia e arquivos são enviados via WebRTC.
+- Mantenha credenciais fora do Git. O D1 guarda presença, sinalização e totais mensais de tempo por rota e participação. Mensagens, mídia e arquivos são enviados via WebRTC.
 
 ## Release
 

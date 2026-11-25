@@ -12,6 +12,38 @@ const schema = [
   'CREATE INDEX IF NOT EXISTS signal_inbox ON signals(room, target, seq)',
 ];
 
+
+const usageSchema = `CREATE TABLE IF NOT EXISTS route_usage (
+  month TEXT NOT NULL, room TEXT NOT NULL, participant TEXT NOT NULL,
+  direct INTEGER NOT NULL, turn INTEGER NOT NULL, unknown INTEGER NOT NULL,
+  PRIMARY KEY (month, room, participant))`;
+
+async function recordUsage(db, body, now) {
+  const usage = body.usage;
+  const month = new Date(now).toISOString().slice(0, 7);
+  if (!usage || usage.month !== month ||
+      !['direct', 'turn', 'unknown'].every(key => Number.isSafeInteger(usage[key]) &&
+        usage[key] >= 0 && usage[key] <= roomLife * (roomLimit - 1))) return null;
+  await db.prepare(usageSchema).run();
+  const result = await db.batch([
+    db.prepare(`INSERT INTO route_usage (month, room, participant, direct, turn, unknown)
+      SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (
+        SELECT 1 FROM peers JOIN rooms ON rooms.id = peers.room
+        WHERE peers.room = ? AND peers.id = ? AND peers.token = ? AND peers.seen > ? AND rooms.expires > ?)
+      ON CONFLICT(month, room, participant) DO UPDATE SET
+      direct = MAX(direct, excluded.direct), turn = MAX(turn, excluded.turn),
+      unknown = MAX(unknown, excluded.unknown)`)
+      .bind(month, body.room, body.id, usage.direct, usage.turn, usage.unknown,
+        body.room, body.id, body.token, now - peerLife, now),
+    db.prepare(`SELECT COALESCE(SUM(direct), 0) AS direct, COALESCE(SUM(turn), 0) AS turn,
+      COALESCE(SUM(unknown), 0) AS unknown FROM route_usage WHERE month = ?`).bind(month),
+    db.prepare(`SELECT participant, direct, turn, unknown FROM route_usage
+      WHERE month = ? AND room = ? AND participant IN (SELECT id FROM peers WHERE room = ? AND seen > ?)`)
+      .bind(month, body.room, body.room, now - peerLife),
+  ]);
+  return { month, total: result[1].results[0], participants: result[2].results };
+}
+
 function json(value, status = 200) {
   return Response.json(value, { status, headers: { 'Cache-Control': 'no-store' } });
 }
@@ -104,7 +136,8 @@ async function sync(db, body, now) {
        AND ${gate} ORDER BY seq LIMIT 32`, room, id, cursor, ...gateArgs),
   ]);
   if (!result[0].results.length) return json({ error: 'Sua sessão expirou. Abra o convite para entrar novamente.' }, 410);
-  return json({ peers: result.at(-2).results, signals: result.at(-1).results });
+  const usage = body.usage ? await recordUsage(db, body, now) : null;
+  return json({ peers: result.at(-2).results, signals: result.at(-1).results, usage });
 }
 
 export async function onRequest({ request, env }) {
@@ -125,6 +158,7 @@ export async function onRequest({ request, env }) {
     if (body.action === 'create' || body.action === 'join') return await enter(db, body, now);
     if (body.action === 'sync') return await sync(db, body, now);
     if (body.action === 'leave') {
+      if (body.usage) await recordUsage(db, body, now);
       await db.prepare('DELETE FROM peers WHERE room = ? AND id = ? AND token = ?').bind(body.room, body.id, body.token).run();
       return json({});
     }

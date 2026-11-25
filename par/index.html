@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Par • Chat direto</title>
   <link rel="stylesheet" href="style.css?v=files1">
-  <script src="app.js?v=files1" defer></script>
+  <script src="app.js?v=usage1" defer></script>
+  <script src="usage.js?v=1" defer></script>
   <script src="files.js?v=1" defer></script>
 </head>
 <body>
@@ -26,6 +27,12 @@
             <div class="participants-panel">
               <ul id="people"></ul>
               <p id="turn-status" hidden></p>
+              <details id="usage-panel">
+                <summary>Uso de TURN</summary>
+                <p>Tempo por conexão entre participantes · mês em UTC</p>
+                <div id="usage-summary">Aguardando medição…</div>
+                <ul id="usage-people"></ul>
+              </details>
             </div>
           </details>
           <button id="share" class="secondary" aria-label="Compartilhar" hidden>

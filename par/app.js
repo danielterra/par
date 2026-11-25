@@ -1006,7 +1006,13 @@ async function syncRoom(current) {
   const outbox = current.outbox.slice(0, 8);
   let delay = 2000;
   try {
-    const result = await roomRequest(current, 'sync', { cursor: current.cursor, outbox });
+    await sampleUsage(current);
+    const usage = usageReport(current);
+    const result = await roomRequest(current, 'sync', { cursor: current.cursor, outbox, usage });
+    if (result.usage && current === session) {
+      current.usageReported = performance.now();
+      renderUsage(current, result.usage, result.peers);
+    }
     if (current !== session) return;
     if (current.offline) notice();
     current.offline = false;
@@ -1042,7 +1048,7 @@ function leave(resetAddress = false) {
   const current = session;
   session = undefined;
   clearTimeout(current.timer);
-  void roomRequest(current, 'leave', {}, true).catch(() => {});
+  void roomRequest(current, 'leave', { usage: usageReport(current, true) }, true).catch(() => {});
   for (const id of links.keys()) dropPeer(id);
   mic?.getTracks().forEach(track => track.stop());
   mic = undefined;
@@ -1083,6 +1089,8 @@ $('entry').onsubmit = async event => {
   try {
     await roomRequest(current, joining ? 'join' : 'create', { name });
     session = current;
+    $('usage-summary').textContent = 'Aguardando medição…';
+    $('usage-people').replaceChildren();
     savePreference(profileNameKey, current.name);
     current.tile = participantTile(current.name, true);
     history.replaceState(null, '', inviteUrl(current.room));
